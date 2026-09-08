@@ -31,6 +31,8 @@ export class AudioEngine {
   private motifTimer = 0;
   private motifNext = 3;
   private current: AudioDef | null = null;
+  /** Scale-step walk position, so phrases move stepwise instead of jumping. */
+  private motifStep = 0;
 
   masterVolume = 0.7;
   sfxVolume = 0.8;
@@ -133,12 +135,22 @@ export class AudioEngine {
     delay.connect(wet);
     wet.connect(this.musicBus);
 
+    // Slow cutoff drift so the whole bed breathes instead of sitting static.
+    const lpLfo = ac.createOscillator();
+    lpLfo.type = 'sine';
+    lpLfo.frequency.value = 0.02;
+    const lpDepth = ac.createGain();
+    lpDepth.gain.value = def.bus.lpHz * 0.25;
+    lpLfo.connect(lpDepth);
+    lpDepth.connect(lp.frequency);
+    lpLfo.start();
+
     for (const layer of def.drone) {
       const voice = this.buildLayer(layer, lp);
       if (voice) this.voices.push(voice);
     }
 
-    this.voices.push({ nodes: [lp, delay, feedback, wet], gain: wet });
+    this.voices.push({ nodes: [lp, delay, feedback, wet, lpLfo, lpDepth], gain: wet });
     this.motifTimer = 0;
     this.motifNext = def.motif.intervalRange[0];
   }
@@ -183,7 +195,21 @@ export class AudioEngine {
       nodes.push(f);
     }
     tail.connect(gain);
-    gain.connect(dest);
+
+    // Slow stereo drift, own rate per layer, so a handful of oscillators
+    // reads as a space rather than one flat mono tone.
+    const panner = ac.createStereoPanner();
+    const panLfo = ac.createOscillator();
+    panLfo.type = 'sine';
+    panLfo.frequency.value = 0.02 + Math.random() * 0.05;
+    const panDepth = ac.createGain();
+    panDepth.gain.value = 0.3 + Math.random() * 0.3;
+    panLfo.connect(panDepth);
+    panDepth.connect(panner.pan);
+    panLfo.start();
+    gain.connect(panner);
+    panner.connect(dest);
+    nodes.push(panner, panLfo, panDepth);
 
     // Slow amplitude wobble. This is what makes the fungal caves breathe.
     if (layer.lfoHz) {
@@ -230,9 +256,29 @@ export class AudioEngine {
     const [lo, hi] = m.intervalRange;
     this.motifNext = lo + Math.random() * (hi - lo);
 
-    const semi = m.scaleSemis[Math.floor(Math.random() * m.scaleSemis.length)];
-    const octave = Math.random() < 0.3 ? 2 : 1;
-    this.pluck(m.rootHz * Math.pow(2, semi / 12) * octave, m.decay, m.gain, m.wave);
+    this.playPhrase(m);
+  }
+
+  /**
+   * A short 2-4 note run that walks the scale by step, rather than one
+   * isolated ping — reads as a little melody (a la Minecraft's piano bits)
+   * instead of disconnected chimes with dead air between them.
+   */
+  private playPhrase(m: AudioDef['motif']): void {
+    const n = m.scaleSemis.length;
+    const notes = 2 + Math.floor(Math.random() * 3);
+    let t = 0;
+    for (let i = 0; i < notes; i++) {
+      this.motifStep += Math.floor(Math.random() * 3) - 1; // -1, 0 or +1 step
+      this.motifStep = Math.max(-n, Math.min(2 * n, this.motifStep));
+      const octave = Math.floor(this.motifStep / n);
+      const semiIdx = ((this.motifStep % n) + n) % n;
+      const hz = m.rootHz * Math.pow(2, (octave * 12 + m.scaleSemis[semiIdx]) / 12);
+      const gain = m.gain * (0.75 + Math.random() * 0.35);
+      const delayMs = t;
+      setTimeout(() => this.pluck(hz, m.decay, gain, m.wave), delayMs);
+      t += 180 + Math.random() * 140;
+    }
   }
 
   private pluck(hz: number, decay: number, gain: number, wave: string): void {

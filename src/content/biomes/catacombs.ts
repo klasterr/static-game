@@ -77,7 +77,7 @@ export const CATACOMBS: BiomeDef = {
       rootHz: 110,
       wave: 'triangle',
       decay: 2.6,
-      intervalRange: [6, 12],
+      intervalRange: [3.5, 7],
       gain: 0.05,
     },
     sfxTint: { hitBandHz: 900, killNoiseDecay: 0.14, pitchBias: 0 },

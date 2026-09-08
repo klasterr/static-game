@@ -83,7 +83,7 @@ export const FUNGAL: BiomeDef = {
       rootHz: 261.6,
       wave: 'sine',
       decay: 0.5,
-      intervalRange: [2.5, 6],
+      intervalRange: [2, 4],
       gain: 0.045,
     },
     sfxTint: { hitBandHz: 500, killNoiseDecay: 0.22, pitchBias: -3 },
