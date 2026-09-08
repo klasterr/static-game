@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="An endless procedurally generated action dungeon crawler that runs entirely in your browser."
+    />
+    <title>Depths — Endless Dungeon Crawler</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #07070b;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      body {
+        font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
+        cursor: crosshair;
+      }
+      /* Shown only if the module script fails to boot at all. */
+      #boot-error {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-content: center;
+        padding: 2rem;
+        color: #d8cfae;
+        font-size: 14px;
+        line-height: 1.6;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"><canvas id="game" tabindex="0"></canvas></div>
+    <div id="boot-error">
+      <div>
+        <strong>This game needs a modern browser.</strong><br />
+        It uses ES modules and Canvas 2D. Try a recent Chrome, Firefox, Edge or Safari.
+      </div>
+    </div>
+    <script>
+      // If the module below never executes (legacy browser, no ESM), reveal the notice.
+      window.__booted = false;
+      setTimeout(function () {
+        if (!window.__booted) document.getElementById('boot-error').style.display = 'grid';
+      }, 2500);
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
