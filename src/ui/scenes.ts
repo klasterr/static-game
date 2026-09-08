@@ -104,7 +104,7 @@ export class TitleScene implements Scene {
       return;
     }
 
-    const chosen = this.menu.step(g.renderer);
+    const chosen = this.menu.step();
     if (!chosen) return;
 
     switch (chosen) {
@@ -227,7 +227,7 @@ export class ClassSelectScene implements Scene {
       g.pop();
       return;
     }
-    const chosen = this.menu.step(g.renderer);
+    const chosen = this.menu.step();
     if (chosen) startRun(g, chosen, this.seed);
   }
 
@@ -305,7 +305,7 @@ export class SanctumScene implements Scene {
       return;
     }
 
-    const chosen = this.menu.step(g.renderer);
+    const chosen = this.menu.step();
     if (!chosen) return;
     if (chosen === 'back') {
       g.pop();
@@ -402,6 +402,8 @@ export class SettingsScene implements Scene {
       return;
     }
 
+    const clicked = this.menu.pointerStep();
+
     // Left/right adjust the highlighted setting rather than moving selection.
     const item = this.menu.items[this.menu.index];
     const delta = Input.pressed(Action.Right) ? 1 : Input.pressed(Action.Left) ? -1 : 0;
@@ -417,16 +419,14 @@ export class SettingsScene implements Scene {
       this.menu.index = Math.min(this.menu.items.length - 1, this.menu.index + 1);
     }
 
-    if (Input.menuConfirm()) {
-      const current = this.menu.items[this.menu.index];
-      if (!current) return;
-      if (current.id === 'back') {
-        g.pop();
-        return;
-      }
-      this.adjust(current.id, 1);
-      this.refresh();
+    const chosen = clicked ?? (Input.menuConfirm() ? this.menu.items[this.menu.index]?.id : undefined);
+    if (!chosen) return;
+    if (chosen === 'back') {
+      g.pop();
+      return;
     }
+    this.adjust(chosen, 1);
+    this.refresh();
   }
 
   private adjust(id: string, delta: number): void {
@@ -715,20 +715,12 @@ export class PauseScene implements Scene {
     { id: 'abandon', label: 'Abandon run', detail: 'Banked souls are kept', color: '#ff8080' },
   ]);
 
-  onEnter(g: Game): void {
-    g.pause();
-  }
-
-  onExit(g: Game): void {
-    g.resume();
-  }
-
   step(g: Game): void {
     if (Input.pressed(Action.Pause) || Input.pressed(Action.Cancel)) {
       g.pop();
       return;
     }
-    const chosen = this.menu.step(g.renderer);
+    const chosen = this.menu.step();
     if (!chosen) return;
 
     switch (chosen) {
@@ -822,7 +814,7 @@ export class ChoiceScene implements Scene {
       return;
     }
 
-    const chosen = this.menu.step(g.renderer);
+    const chosen = this.menu.step();
     if (!chosen) return;
 
     if (choice.kind === 'perk') {
@@ -954,7 +946,7 @@ export class GameOverScene implements Scene {
     // Brief lockout so a held attack key does not skip the summary.
     if (this.t < 500) return;
 
-    const chosen = this.menu.step(g.renderer);
+    const chosen = this.menu.step();
     if (!chosen) return;
 
     switch (chosen) {

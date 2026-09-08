@@ -243,11 +243,6 @@ class InputState {
         normalize(kx, ky, scratchA);
         this.moveX = scratchA.x;
         this.moveY = scratchA.y;
-        // Any movement key hands aim back to the keyboard.
-        if (this.pressA[Action.Up] || this.pressA[Action.Down] ||
-            this.pressA[Action.Left] || this.pressA[Action.Right]) {
-          this.aimSource = 'move';
-        }
       } else {
         this.moveX = 0;
         this.moveY = 0;

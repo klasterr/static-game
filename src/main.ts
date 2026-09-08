@@ -7,7 +7,7 @@ import { ALL_UNLOCK_IDS } from './systems/loot';
 import { Game } from './game';
 import { fx } from './render/fx';
 import { setCameraViewSize } from './run/runState';
-import { HelpScene, PlayScene, TitleScene } from './ui/scenes';
+import { HelpScene, PauseScene, PlayScene, TitleScene } from './ui/scenes';
 
 /**
  * Bootstrap. DOM wiring only — nothing game-logical lives here.
@@ -77,12 +77,15 @@ function installLifecycle(game: Game, canvas: HTMLCanvasElement): void {
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) return;
-    // Pause and flush on the way out. Returning does NOT auto-resume: the
-    // player should not come back to a fight already in progress.
-    game.pause();
     Input.releaseAll();
     const play = game.scenes.find((s) => s instanceof PlayScene) as PlayScene | undefined;
     play?.run.bankSouls();
+    // Open the pause menu rather than freezing the whole loop: the player
+    // should not come back to a fight already in progress, but the loop must
+    // keep running so the menu itself stays clickable when they tab back in.
+    if (play && !game.scenes.some((s) => s instanceof PauseScene)) {
+      game.push(new PauseScene());
+    }
     saveNow();
   });
 

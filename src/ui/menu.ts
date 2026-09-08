@@ -58,7 +58,7 @@ export class MenuList {
   }
 
   /** Advance selection. Returns the chosen id when confirmed, else null. */
-  step(r: Renderer): string | null {
+  step(): string | null {
     if (this.items.length === 0) return null;
 
     if (Input.pressed(Action.Up) || Input.pressed(Action.Left)) {
@@ -70,26 +70,38 @@ export class MenuList {
       audio.ui(false);
     }
 
-    // Mouse hover follows the pointer, so both input styles stay live.
-    const hover = this.hitTest(r);
-    if (hover >= 0 && hover !== this.lastHover && !this.items[hover].disabled) {
-      this.index = hover;
-      this.lastHover = hover;
-      audio.ui(true);
-    }
+    const clicked = this.pointerStep();
+    if (clicked) return clicked;
 
-    if (Input.pointerPressed && hover >= 0 && !this.items[hover].disabled) {
-      return this.items[hover].id;
-    }
     if (Input.menuConfirm() && !this.items[this.index].disabled) {
       return this.items[this.index].id;
     }
     return null;
   }
 
-  private hitTest(r: Renderer): number {
-    const mx = Input.mouseSX * r.dpr;
-    const my = Input.mouseSY * r.dpr;
+  /**
+   * Mouse hover + click only, with no keyboard movement. For scenes (like
+   * Settings) that bind Left/Right to something other than selection.
+   */
+  pointerStep(): string | null {
+    if (this.items.length === 0) return null;
+    const hover = this.hitTest();
+    if (hover >= 0 && hover !== this.lastHover && !this.items[hover].disabled) {
+      this.index = hover;
+      this.lastHover = hover;
+      audio.ui(true);
+    }
+    if (Input.pointerPressed && hover >= 0 && !this.items[hover].disabled) {
+      return this.items[hover].id;
+    }
+    return null;
+  }
+
+  private hitTest(): number {
+    // Rows are recorded in CSS-pixel space (draw()/panel() undo dpr via
+    // c.scale); multiplying by dpr here double-applies it on any non-1x display.
+    const mx = Input.mouseSX;
+    const my = Input.mouseSY;
     for (let i = 0; i < this.rows.length; i++) {
       const row = this.rows[i];
       if (mx >= row.x && mx <= row.x + row.w && my >= row.y && my <= row.y + row.h) return i;
